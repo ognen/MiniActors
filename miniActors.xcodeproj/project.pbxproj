@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		28B763FC21E78E39002C53BD /* miniActors.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28B763F221E78E39002C53BD /* miniActors.framework */; };
-		28B7640121E78E39002C53BD /* miniActorsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B7640021E78E39002C53BD /* miniActorsTests.swift */; };
-		28B7640321E78E39002C53BD /* miniActors.h in Headers */ = {isa = PBXBuildFile; fileRef = 28B763F521E78E39002C53BD /* miniActors.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		28B763FC21E78E39002C53BD /* MiniActors.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28B763F221E78E39002C53BD /* MiniActors.framework */; };
+		28B7640D21E78EB2002C53BD /* ActorSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B7640C21E78EB2002C53BD /* ActorSystem.swift */; };
+		28B7640F21E8E689002C53BD /* ActorPathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B7640E21E8E689002C53BD /* ActorPathTests.swift */; };
+		28B7641021E8EAEC002C53BD /* MiniActors.h in Headers */ = {isa = PBXBuildFile; fileRef = 28B763F521E78E39002C53BD /* MiniActors.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		28B7641221E8EB2A002C53BD /* ActorPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B7641121E8EB2A002C53BD /* ActorPath.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -23,12 +25,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		28B763F221E78E39002C53BD /* miniActors.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = miniActors.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		28B763F521E78E39002C53BD /* miniActors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = miniActors.h; sourceTree = "<group>"; };
+		28B763F221E78E39002C53BD /* MiniActors.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MiniActors.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		28B763F521E78E39002C53BD /* MiniActors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MiniActors.h; sourceTree = "<group>"; };
 		28B763F621E78E39002C53BD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		28B763FB21E78E39002C53BD /* miniActorsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = miniActorsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		28B7640021E78E39002C53BD /* miniActorsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = miniActorsTests.swift; sourceTree = "<group>"; };
+		28B763FB21E78E39002C53BD /* MiniActorsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiniActorsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		28B7640221E78E39002C53BD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		28B7640C21E78EB2002C53BD /* ActorSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorSystem.swift; sourceTree = "<group>"; };
+		28B7640E21E8E689002C53BD /* ActorPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorPathTests.swift; sourceTree = "<group>"; };
+		28B7641121E8EB2A002C53BD /* ActorPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorPath.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,7 +47,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				28B763FC21E78E39002C53BD /* miniActors.framework in Frameworks */,
+				28B763FC21E78E39002C53BD /* MiniActors.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,8 +57,8 @@
 		28B763E821E78E39002C53BD = {
 			isa = PBXGroup;
 			children = (
-				28B763F421E78E39002C53BD /* miniActors */,
-				28B763FF21E78E39002C53BD /* miniActorsTests */,
+				28B763F421E78E39002C53BD /* MiniActors */,
+				28B763FF21E78E39002C53BD /* MiniActorsTests */,
 				28B763F321E78E39002C53BD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -62,28 +66,30 @@
 		28B763F321E78E39002C53BD /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				28B763F221E78E39002C53BD /* miniActors.framework */,
-				28B763FB21E78E39002C53BD /* miniActorsTests.xctest */,
+				28B763F221E78E39002C53BD /* MiniActors.framework */,
+				28B763FB21E78E39002C53BD /* MiniActorsTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		28B763F421E78E39002C53BD /* miniActors */ = {
+		28B763F421E78E39002C53BD /* MiniActors */ = {
 			isa = PBXGroup;
 			children = (
-				28B763F521E78E39002C53BD /* miniActors.h */,
+				28B763F521E78E39002C53BD /* MiniActors.h */,
 				28B763F621E78E39002C53BD /* Info.plist */,
+				28B7640C21E78EB2002C53BD /* ActorSystem.swift */,
+				28B7641121E8EB2A002C53BD /* ActorPath.swift */,
 			);
-			path = miniActors;
+			path = MiniActors;
 			sourceTree = "<group>";
 		};
-		28B763FF21E78E39002C53BD /* miniActorsTests */ = {
+		28B763FF21E78E39002C53BD /* MiniActorsTests */ = {
 			isa = PBXGroup;
 			children = (
-				28B7640021E78E39002C53BD /* miniActorsTests.swift */,
 				28B7640221E78E39002C53BD /* Info.plist */,
+				28B7640E21E8E689002C53BD /* ActorPathTests.swift */,
 			);
-			path = miniActorsTests;
+			path = MiniActorsTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -93,16 +99,16 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				28B7640321E78E39002C53BD /* miniActors.h in Headers */,
+				28B7641021E8EAEC002C53BD /* MiniActors.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		28B763F121E78E39002C53BD /* miniActors */ = {
+		28B763F121E78E39002C53BD /* MiniActors */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 28B7640621E78E39002C53BD /* Build configuration list for PBXNativeTarget "miniActors" */;
+			buildConfigurationList = 28B7640621E78E39002C53BD /* Build configuration list for PBXNativeTarget "MiniActors" */;
 			buildPhases = (
 				28B763ED21E78E39002C53BD /* Headers */,
 				28B763EE21E78E39002C53BD /* Sources */,
@@ -113,14 +119,14 @@
 			);
 			dependencies = (
 			);
-			name = miniActors;
+			name = MiniActors;
 			productName = miniActors;
-			productReference = 28B763F221E78E39002C53BD /* miniActors.framework */;
+			productReference = 28B763F221E78E39002C53BD /* MiniActors.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		28B763FA21E78E39002C53BD /* miniActorsTests */ = {
+		28B763FA21E78E39002C53BD /* MiniActorsTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 28B7640921E78E39002C53BD /* Build configuration list for PBXNativeTarget "miniActorsTests" */;
+			buildConfigurationList = 28B7640921E78E39002C53BD /* Build configuration list for PBXNativeTarget "MiniActorsTests" */;
 			buildPhases = (
 				28B763F721E78E39002C53BD /* Sources */,
 				28B763F821E78E39002C53BD /* Frameworks */,
@@ -131,9 +137,9 @@
 			dependencies = (
 				28B763FE21E78E39002C53BD /* PBXTargetDependency */,
 			);
-			name = miniActorsTests;
+			name = MiniActorsTests;
 			productName = miniActorsTests;
-			productReference = 28B763FB21E78E39002C53BD /* miniActorsTests.xctest */;
+			productReference = 28B763FB21E78E39002C53BD /* MiniActorsTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -148,6 +154,7 @@
 				TargetAttributes = {
 					28B763F121E78E39002C53BD = {
 						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1010;
 					};
 					28B763FA21E78E39002C53BD = {
 						CreatedOnToolsVersion = 10.1;
@@ -166,8 +173,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				28B763F121E78E39002C53BD /* miniActors */,
-				28B763FA21E78E39002C53BD /* miniActorsTests */,
+				28B763F121E78E39002C53BD /* MiniActors */,
+				28B763FA21E78E39002C53BD /* MiniActorsTests */,
 			);
 		};
 /* End PBXProject section */
@@ -194,6 +201,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				28B7641221E8EB2A002C53BD /* ActorPath.swift in Sources */,
+				28B7640D21E78EB2002C53BD /* ActorSystem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -201,7 +210,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				28B7640121E78E39002C53BD /* miniActorsTests.swift in Sources */,
+				28B7640F21E8E689002C53BD /* ActorPathTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -210,7 +219,7 @@
 /* Begin PBXTargetDependency section */
 		28B763FE21E78E39002C53BD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 28B763F121E78E39002C53BD /* miniActors */;
+			target = 28B763F121E78E39002C53BD /* MiniActors */;
 			targetProxy = 28B763FD21E78E39002C53BD /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -341,6 +350,7 @@
 		28B7640721E78E39002C53BD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -358,6 +368,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.netcetera.miniActors;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -366,6 +377,7 @@
 		28B7640821E78E39002C53BD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -391,6 +403,7 @@
 		28B7640A21E78E39002C53BD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = LAA69LK8PF;
 				INFOPLIST_FILE = miniActorsTests/Info.plist;
@@ -409,6 +422,7 @@
 		28B7640B21E78E39002C53BD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = LAA69LK8PF;
 				INFOPLIST_FILE = miniActorsTests/Info.plist;
@@ -436,7 +450,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		28B7640621E78E39002C53BD /* Build configuration list for PBXNativeTarget "miniActors" */ = {
+		28B7640621E78E39002C53BD /* Build configuration list for PBXNativeTarget "MiniActors" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				28B7640721E78E39002C53BD /* Debug */,
@@ -445,7 +459,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		28B7640921E78E39002C53BD /* Build configuration list for PBXNativeTarget "miniActorsTests" */ = {
+		28B7640921E78E39002C53BD /* Build configuration list for PBXNativeTarget "MiniActorsTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				28B7640A21E78E39002C53BD /* Debug */,
