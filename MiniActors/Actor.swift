@@ -29,7 +29,7 @@ public enum ActorErrors: Error {
   case UnhandledMessage
 }
 
-public class : Actor {
+public class BaseActor : Actor {
   public var context: ActorContext = NoActorContext
   
   

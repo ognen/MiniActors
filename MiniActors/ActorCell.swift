@@ -2,7 +2,7 @@ import Foundation
 
 let currentActorKey = DispatchSpecificKey<ActorRef>()
 
-struct InternalRef: Hashable, Equatable, ActorRef {
+struct InternalRef: ActorIdentification, ActorMessaging {
   weak var cell: ActorCell?
   let path: Path
   let uid: UUID
@@ -14,17 +14,10 @@ struct InternalRef: Hashable, Equatable, ActorRef {
   }
   
   
-  func tell(msg: Any, sender: ActorRef) {
-    cell?.tell(msg: msg, sender: sender)
+  func tell(msg: Any, sender: ActorRefProtocol) {
+    cell?.tell(msg: msg, sender: ActorRef(sender))
   }
   
-  static func == (lhs: InternalRef, rhs: InternalRef) -> Bool {
-    return lhs.uid == rhs.uid
-  }
-  
-  func hash(into hasher: inout Hasher) {
-    uid.hash(into: &hasher)
-  }
 }
 
 enum ActorState {
@@ -73,21 +66,21 @@ class ActorCell {
   
   var stopped: [String] = []
 
-  lazy var _this: InternalRef = InternalRef(path: path, cell: self)
+  lazy var _this = ActorRef(InternalRef(path: path, cell: self))
   
-  let _parent: InternalRef
+  let _parent: ActorRef
 
   var _sender: ActorRef = Nobody
 
   init(name: String,
-       parent: InternalRef,
+       parent: ActorRef,
        path: Path,
        creator: @escaping () -> Actor,
        config: CellConfig = CellConfig(maxRestarts: 10,
                                        waitForChildrenToStop:
                                         DispatchTimeInterval.seconds(10))) {
     self.name = name
-    self._parent = parent
+    self._parent = ActorRef(parent)
     self.path = path
     self.creator = creator
     self.config = config

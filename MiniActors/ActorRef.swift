@@ -2,19 +2,24 @@ import Foundation
 
 infix operator !
 
-public protocol ActorRef {
-  var uid: UUID { get }
-  var path: Path { get }
-  func tell(msg: Any, sender: ActorRef)
+public typealias ActorRefProtocol = ActorMessaging & ActorIdentification
+
+public protocol ActorMessaging {
+  func tell(msg: Any, sender: ActorRefProtocol)
   func tell(msg: Any)
   //  func ask(msg: Any, sender: ActorRef, callback: (_ response: Any) throws -> ())
 }
 
-public func !(lhs: ActorRef, rhs: Any) {
+public protocol ActorIdentification {
+  var uid: UUID { get }
+  var path: Path { get }
+}
+
+public func !(lhs: ActorMessaging, rhs: Any) {
   lhs.tell(msg: rhs)
 }
 
-extension ActorRef {
+extension ActorMessaging {
   public func tell(msg: Any) {
     if let actor = DispatchQueue.getSpecific(key: currentActorKey) {
       self.tell(msg: msg, sender: actor)
@@ -24,10 +29,10 @@ extension ActorRef {
   }
 }
 
-public struct AnyActorRef: ActorRef, Hashable {
-  private let ref: ActorRef
+public struct ActorRef: ActorMessaging, ActorIdentification, Hashable {
+  private let ref: ActorRefProtocol
   
-  public init(_ ref: ActorRef) {
+  public init(_ ref: ActorRefProtocol) {
     self.ref = ref
   }
 
@@ -43,11 +48,11 @@ public struct AnyActorRef: ActorRef, Hashable {
     }
   }
   
-  public func tell(msg: Any, sender: ActorRef) {
+  public func tell(msg: Any, sender: ActorRefProtocol) {
     ref.tell(msg: msg, sender: sender)
   }
 
-  public static func == (lhs: AnyActorRef, rhs: AnyActorRef) -> Bool {
+  public static func == (lhs: ActorRef, rhs: ActorRef) -> Bool {
     return lhs.uid == rhs.uid
   }
   
@@ -56,7 +61,7 @@ public struct AnyActorRef: ActorRef, Hashable {
   }
 }
 
-public struct RefToNobody: ActorRef, Hashable {
+public struct RefToNobody: ActorMessaging, ActorIdentification {
   public let uid = UUID()
   public let path: Path = Path.root
   
@@ -70,18 +75,10 @@ public struct RefToNobody: ActorRef, Hashable {
     // NOOP
   }
   
-  public func tell(msg: Any, sender: ActorRef) {
+  public func tell(msg: Any, sender: ActorRefProtocol) {
     // NOOP
-  }
-  
-  public static func ==(lhs: RefToNobody, rhs: RefToNobody) -> Bool {
-    return lhs.uid == rhs.uid
-  }
-  
-  public func hash(into hasher: inout Hasher) {
-    uid.hash(into: &hasher)
   }
 }
 
-public let Nobody = RefToNobody()
+public let Nobody = ActorRef(RefToNobody())
 
