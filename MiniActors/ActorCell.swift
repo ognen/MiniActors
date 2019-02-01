@@ -3,18 +3,18 @@ import Foundation
 let currentActorKey = DispatchSpecificKey<ActorRef>()
 
 struct InternalRef: ActorIdentification, ActorMessaging {
-  weak var cell: ActorCell?
+  weak var cell: Cell?
   let path: Path
   let uid: UUID
  
-  init(path: Path, cell: ActorCell) {
+  init(path: Path, cell: Cell) {
     self.path = path
     self.cell = cell
     self.uid = cell.uid
   }
   
-  
   func tell(msg: Any, sender: ActorRefProtocol) {
+    // TODO deadletters
     cell?.tell(msg: msg, sender: ActorRef(sender))
   }
   
@@ -36,63 +36,128 @@ enum SystemMessages {
   case Stopped
 }
 
-struct CellConfig {
-  let maxRestarts: Int
-  let waitForChildrenToStop: DispatchTimeInterval
-}
-
 struct ChildStats {
   var restartCounter: Int = 0
+  var startOfWindow: DispatchTime? = nil
+  let config: RestartConfig
+
+  init(config: RestartConfig) {
+    self.config = config
+  }
   
-  mutating func restarted() {
-    restartCounter += 1
+  mutating func shouldRestart() -> Bool {
+    switch (startOfWindow, config.withinTimeRange) {
+    case (.none, .none):
+      restartCounter += 1
+      
+    case (.none, _):
+      startOfWindow = DispatchTime.now()
+      restartCounter += 1
+
+    case (.some(_), .none):
+      break // impossible, we don't touch
+
+    case (let windowStart?, let w?):
+      let now = DispatchTime.now()
+      if windowStart + w < now {
+        restartCounter += 1
+      } else {
+        restartCounter = 1
+        startOfWindow = now
+      }
+    }
+    
+    return restartCounter <= config.maxNumberOfRestarts
+
   }
 }
 
-class ActorCell {
-  let uid: UUID = UUID()
+// TYPE Erasure (base clasS)
+class Cell {
+  let uid = UUID()
+  
+  var ref: ActorRef {
+    get {
+        fatalError("Must be overriden by the concrete class")
+    }
+  }
+  
+  func tell(msg: Any, sender: ActorRefProtocol) {
+    fatalError("Must be overidden in the concrete class")
+  }
+}
+
+class ActorCell<Actr: Actor>: Cell {
   let name: String
   let path: Path
-  let creator: () -> Actor
-  let config: CellConfig
 
-  var actor: Actor?
+  let config: ActorConfig
+
+  let actorClass: Actr.Type
+  var actor: Actr?
+  let props: Actr.Props
+  
   var state: ActorState = .Operational
+  
   let q: DispatchQueue
+  
   var mailbox: [(ActorRef, Any)] = []
   
-  var children: [String:ActorCell] = [:]
+  var childUidByName: [String: UUID] = [:]
+  var children: [UUID:Cell] = [:]
   var childStats: [UUID:ChildStats] = [:]
   
   var stopped: [String] = []
 
-  lazy var _this = ActorRef(InternalRef(path: path, cell: self))
+  lazy var _ref = ActorRef(InternalRef(path: path, cell: self))
   
-  let _parent: ActorRef
-
-  var _sender: ActorRef = Nobody
+  override var ref: ActorRef {
+    get {
+      return _ref
+    }
+  }
+  
+  var parent: ActorRef
+  var sender: ActorRef = Nobody
 
   init(name: String,
        parent: ActorRef,
-       path: Path,
-       creator: @escaping () -> Actor,
-       config: CellConfig = CellConfig(maxRestarts: 10,
-                                       waitForChildrenToStop:
-                                        DispatchTimeInterval.seconds(10))) {
+       actor: Actr.Type,
+       props: Actr.Props,
+       config: ActorConfig) {
     self.name = name
-    self._parent = ActorRef(parent)
-    self.path = path
-    self.creator = creator
+    self.parent = parent
+    self.path = parent.path / name
+    
+    self.actorClass = actor
+    self.props = props
     self.config = config
     
     self.q = DispatchQueue(
       label: "Actor: \(path)",
       qos: DispatchQoS.userInitiated)
-    
-    self.q.setSpecific(key: currentActorKey, value: _this)
+
+    super.init()
+
+    self.q.setSpecific(key: currentActorKey, value: ref)
   }
   
-  func tell(msg: Any, sender: ActorRef) {
+  var isStopped: Bool {
+    get {
+      return q.sync { [weak self] in
+        switch self?.state {
+        case .some(.Stopped):
+          return true
+        case .none: // reference gone by the time this runs => stopped
+          return true
+        default:
+          return false
+        }
+      }
+    }
+  }
+    
+  override func tell(msg: Any, sender: ActorRefProtocol) {
     self.q.async { [weak self] in
       self?.internalTell(msg: msg, sender: sender)
     }
@@ -104,10 +169,10 @@ class ActorCell {
     }
   }
   
-  func internalTell(msg: Any, sender: ActorRef) {
-    self._sender = sender
+  func internalTell(msg: Any, sender: ActorRefProtocol) {
+    self.sender = ActorRef(sender)
 
-    if let msg = msg as? SystemMessages {
+    if case let msg as SystemMessages = msg {
       handleSystemMessage(msg: msg)
     } else {
       handleMessage(msg: msg)
@@ -116,12 +181,12 @@ class ActorCell {
   
   func handleSystemMessage(msg: SystemMessages) {
     switch msg {
-    case .Stopped: handleStoppedChild(_sender)
+    case .Stopped: handleStoppedChild(sender)
     case .FinalizeStop: handleFinalizeStop()
     case .Stop: doStop()
     case .Resume: doResume()
     case .Restart: doRestart()
-    case .Failed(let error): handleFailedChild(_sender, error: error)
+    case .Failed(let error): handleFailedChild(sender, error: error)
     }
   }
   
@@ -137,13 +202,13 @@ class ActorCell {
   }
   
   func doQueue(_ msg: Any) {
-    mailbox.append((_sender, msg))
+    mailbox.append((sender, msg))
   }
   
   func deliverQueuedMessages() {
     while state == .Operational && mailbox.count > 0 {
       let (sender, msg) = mailbox.removeFirst()
-      self._sender = sender
+      self.sender = sender
       handleMessage(msg: msg)
     }
   }
@@ -160,7 +225,7 @@ class ActorCell {
   
   func handleFailure(_ error: Error) {
     self.state = .Suspended
-    _parent ! SystemMessages.Failed(error: error)
+    parent ! SystemMessages.Failed(error: error)
   }
   
   func doResume() {
@@ -178,33 +243,43 @@ class ActorCell {
   func doStop() {
     self.state = .Terminating
     self.stopped = []
-    for c in children.values {
-      c.this ! SystemMessages.Stop
-    }
     
-    schedule(msg: SystemMessages.FinalizeStop,
-             sender: this,
-             after: config.waitForChildrenToStop)
+    if children.isEmpty {
+      self.state = .Stopped
+      parent ! SystemMessages.Stopped
+    } else {
+      for case let c as ActorCell in children.values {
+        c.this ! SystemMessages.Stop
+      }
+      
+      schedule(msg: SystemMessages.FinalizeStop,
+               sender: this,
+               after: config.waitForChildrenToStop)
+    }
     
   }
   
   func handleStoppedChild(_ child: ActorRef) {
-    // wrong, but since we are only doing counting
-    stopped.append(String(describing: child.path))
+    // TODO, clean up childUidByName or?
+    children.removeValue(forKey: child.uid)
+    childStats.removeValue(forKey: child.uid)
     
-    if stopped.count == children.count {
-      state = .Stopped
-      _parent ! SystemMessages.Stopped
+    if state == .Terminating {
+      stopped.append(String(describing: child.path))
+      if stopped.count == children.count {
+        state = .Stopped
+        parent ! SystemMessages.Stopped
+      }
     }
   }
   
   func handleFinalizeStop() {
     if state != .Stopped {
       // TODO log
+      state = .Stopped
+      parent ! SystemMessages.Stopped
     }
     
-    state = .Stopped
-    _parent ! SystemMessages.Stopped
   }
   
   func handleFailedChild(_ child: ActorRef, error: Error) {
@@ -212,16 +287,16 @@ class ActorCell {
     
     switch state {
     case .Operational, .Suspended:
-      let decision = actor.handleFailure(child: child, error: error)
+      let decision = actor.handleFailure(ofChild: child, error: error)
       
       switch decision {
-      case .OneForOne(.Stop):
+      case .Stop:
         child ! SystemMessages.Stop
-      case .OneForOne(.Restart):
+      case .Restart:
         restart(child: child, error: error)
-      case .OneForOne(.Escalate):
+      case .Escalate:
         handleFailure(error)
-      case .OneForOne(.Resume):
+      case .Resume:
         child ! SystemMessages.Resume
       }
       
@@ -233,98 +308,107 @@ class ActorCell {
   func restart(child: ActorRef, error: Error) {
     let childUid = child.uid
     var stats: ChildStats
+    
     if let cs = childStats[childUid] {
       stats = cs
     } else {
-      stats = ChildStats(restartCounter: 0)
+      let cfg: RestartConfig
+      if case .OneForOne(let config) = ensureActor().supervisorStrategy() {
+        cfg = config
+      } else {
+        cfg = DefaultRestartConfig
+      }
+      
+      stats = ChildStats(config: cfg)
     }
     
-    stats.restarted()
-    
-    // simple strategy
-    if stats.restartCounter > config.maxRestarts {
-      // child keeps failing, escalate
-      handleFailure(error)
-    } else {
+    if stats.shouldRestart() {
       child ! restart
+    } else {
+      handleFailure(error)
     }
     
     childStats[childUid] = stats
   }
   
-  func ensureActor() -> Actor {
+  func ensureActor() -> Actr {
     if self.actor == nil {
-      self.actor = creator()
-      self.actor!.context = ContextReference(cell: self)
+      let context = ContextReference(cell: self)
+      self.actor = self.actorClass.init(using: context, props: self.props)
     }
     
     return self.actor!
   }
+  
 }
 
 extension ActorCell: ActorCreation {
-  func actor(named name: String,
-             _ factory: @autoclosure @escaping () -> Actor) -> ActorRef? {
-    var ref: ActorRef? = nil
-    q.sync {
-      if state == .Terminating {
-        ref = Nobody
-      } else if children[name] == nil {
-        let cell = ActorCell(name: name,
-                             parent: _this,
-                             path: path / name,
-                             creator: factory,
-                             config: self.config)
-        children[name] = cell
-        ref = cell.this
-      } else {
-        // TODO Log Warning
+  func actorCell
+    <A: Actor>
+    (of type: A.Type, props: A.Props, named name: String) -> ActorCell<A>?
+  {
+    return q.sync {
+      switch state {
+      case .Terminating, .Stopped:
+        return nil
+      default:
+        let cell = ActorCell<A>(name: name,
+                                parent: ref,
+                                actor: type,
+                                props: props,
+                                config: self.config)
+        childUidByName[name] = cell.uid
+        children[cell.uid] = cell
+        
+        return cell
       }
     }
-    
-    return ref
+  }
+  
+  func actor
+    <A: Actor>
+    (of type: A.Type, props: A.Props, named name: String) -> ActorRef
+  {
+    if let c =  actorCell(of: type, props: props, named: name) {
+      return c.ref
+    }
+    return Nobody
   }
 }
 
 extension ActorCell: ActorContext {
-  public var sender: ActorRef {
-    return _sender
-  }
-  
-  public var parent: ActorRef {
-    return _parent
-  }
-  
   public var this: ActorRef {
-    return _this
+    return ref
   }
 }
 
 // use a separate struct to avoid circular references that would
 // be too easily made
-struct ContextReference {
-  weak var cell: ActorCell?
+struct ContextReference<A: Actor, C: ActorCell<A>> {
+  weak var cell: C?
   // TODO: dead letters
 }
 
 extension ContextReference: ActorCreation {
-  func actor(named name: String,
-             _ factory: @autoclosure @escaping () -> Actor) -> ActorRef? {
-    return cell!.actor(named: name, factory)
+  func actor
+    <Actr: Actor>
+    (of type: Actr.Type, props: Actr.Props, named: String) -> ActorRef
+  {
+    return cell!.actor(of: type, props: props, named: named)
   }
 }
 
 extension ContextReference: ActorContext {
   // The context shoud
   public var sender: ActorRef {
-    return cell!._sender
+    return cell!.sender
   }
   
   public var parent: ActorRef {
-    return cell!._parent
+    return cell!.parent
   }
   
   public var this: ActorRef {
-    return cell!._this
+    return cell!.this
   }
 }

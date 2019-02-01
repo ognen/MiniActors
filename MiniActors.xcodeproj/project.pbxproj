@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2840D2AC21F71C9E00D7FA32 /* ActorSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2840D2AB21F71C9E00D7FA32 /* ActorSystem.swift */; };
+		2840D2AE21F7557000D7FA32 /* ActorSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2840D2AD21F7557000D7FA32 /* ActorSystemTests.swift */; };
+		28A1386921F5FDD500B2378A /* ActorCellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28A1386821F5FDD500B2378A /* ActorCellTests.swift */; };
 		28B763FC21E78E39002C53BD /* MiniActors.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28B763F221E78E39002C53BD /* MiniActors.framework */; };
 		28B7640D21E78EB2002C53BD /* ActorCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B7640C21E78EB2002C53BD /* ActorCell.swift */; };
 		28B7640F21E8E689002C53BD /* PathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B7640E21E8E689002C53BD /* PathTests.swift */; };
@@ -28,6 +31,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2840D2AB21F71C9E00D7FA32 /* ActorSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorSystem.swift; sourceTree = "<group>"; };
+		2840D2AD21F7557000D7FA32 /* ActorSystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorSystemTests.swift; sourceTree = "<group>"; };
+		28A1386821F5FDD500B2378A /* ActorCellTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorCellTests.swift; sourceTree = "<group>"; };
 		28B763F221E78E39002C53BD /* MiniActors.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MiniActors.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		28B763F521E78E39002C53BD /* MiniActors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MiniActors.h; sourceTree = "<group>"; };
 		28B763F621E78E39002C53BD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -61,6 +67,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		282FA06522047D8800E6DFB6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		28B763E821E78E39002C53BD = {
 			isa = PBXGroup;
 			children = (
@@ -68,6 +81,7 @@
 				28B763F421E78E39002C53BD /* MiniActors */,
 				28B763FF21E78E39002C53BD /* MiniActorsTests */,
 				28B763F321E78E39002C53BD /* Products */,
+				282FA06522047D8800E6DFB6 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -85,11 +99,12 @@
 			children = (
 				28B763F521E78E39002C53BD /* MiniActors.h */,
 				28B763F621E78E39002C53BD /* Info.plist */,
-				28B7640C21E78EB2002C53BD /* ActorCell.swift */,
 				28B7641121E8EB2A002C53BD /* Path.swift */,
 				28B7641321EC9C09002C53BD /* ActorRef.swift */,
 				28B7641521ECDA4F002C53BD /* Actor.swift */,
 				28EFA27921F2173D0083CFAC /* ActorContext.swift */,
+				28B7640C21E78EB2002C53BD /* ActorCell.swift */,
+				2840D2AB21F71C9E00D7FA32 /* ActorSystem.swift */,
 			);
 			path = MiniActors;
 			sourceTree = "<group>";
@@ -99,6 +114,8 @@
 			children = (
 				28B7640221E78E39002C53BD /* Info.plist */,
 				28B7640E21E8E689002C53BD /* PathTests.swift */,
+				28A1386821F5FDD500B2378A /* ActorCellTests.swift */,
+				2840D2AD21F7557000D7FA32 /* ActorSystemTests.swift */,
 			);
 			path = MiniActorsTests;
 			sourceTree = "<group>";
@@ -224,6 +241,7 @@
 				28B7641221E8EB2A002C53BD /* Path.swift in Sources */,
 				28B7640D21E78EB2002C53BD /* ActorCell.swift in Sources */,
 				28B7641421EC9C09002C53BD /* ActorRef.swift in Sources */,
+				2840D2AC21F71C9E00D7FA32 /* ActorSystem.swift in Sources */,
 				28B7641621ECDA4F002C53BD /* Actor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -233,6 +251,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				28B7640F21E8E689002C53BD /* PathTests.swift in Sources */,
+				2840D2AE21F7557000D7FA32 /* ActorSystemTests.swift in Sources */,
+				28A1386921F5FDD500B2378A /* ActorCellTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -7,14 +7,33 @@ public enum ChildFailureResolution {
   case Escalate
 }
 
-public enum RestartStrategy {
-  case OneForOne(resolution: ChildFailureResolution)
+public struct RestartConfig {
+  let maxNumberOfRestarts: Int
+  let withinTimeRange: DispatchTimeInterval?
 }
 
+public let DefaultRestartConfig =
+  RestartConfig(maxNumberOfRestarts: 10,
+  withinTimeRange: DispatchTimeInterval.seconds(1))
+
+public enum RestartStrategy {
+  case OneForOne(config: RestartConfig)
+}
+
+public let PoisonPill: Any = SystemMessages.Stop
+
 public protocol Actor: class {
-  var context: ActorContext { get set }
+  associatedtype Props
+  
+  init(using context: ActorContext, props: Props)
+
+  var context: ActorContext { get }
+  var sender: ActorRef { get }
+  
   func receive(msg: Any) throws
-  func handleFailure(child: ActorRef, error: Error) -> RestartStrategy
+  
+  func supervisorStrategy() -> RestartStrategy
+  func handleFailure(ofChild: ActorRef, error: Error) -> ChildFailureResolution
 }
 
 public extension Actor {
@@ -25,55 +44,37 @@ public extension Actor {
   }
 }
 
+
 public enum ActorErrors: Error {
   case UnhandledMessage
 }
 
-public class BaseActor : Actor {
-  public var context: ActorContext = NoActorContext
+open class BaseActor<Props>: Actor {
   
+  public private(set) var context: ActorContext
+  public private(set) var props: Props
   
-  public func receive(msg: Any) throws {
+  public required init(using context: ActorContext, props: Props) {
+    self.context = context
+    self.props = props
+  }
+  
+  open func receive(msg: Any) throws {
     throw ActorErrors.UnhandledMessage
   }
   
-  public func handleFailure(child: ActorRef, error: Error) -> RestartStrategy {
+  open func supervisorStrategy() -> RestartStrategy {
+    return .OneForOne(config: DefaultRestartConfig)
+  }
+  
+  open func handleFailure(ofChild: ActorRef, error: Error) -> ChildFailureResolution {
     switch error {
     case ActorErrors.UnhandledMessage:
-      return .OneForOne(resolution: .Resume)
+      return .Resume
     default:
-      return .OneForOne(resolution: .Restart)
+      return .Restart
     }
   }
 }
 
-struct UninitializedContext: ActorContext {
-  var parent: ActorRef {
-    get {
-      return Nobody
-    }
-  }
-  
-  var this: ActorRef {
-    get {
-      return Nobody
-    }
-  }
-  
-  var sender: ActorRef {
-    get {
-      return Nobody
-    }
-  }
-  
-  func actor(named: String,
-             _ factory: @autoclosure @escaping () -> Actor) -> ActorRef? {
-    return Nobody
-  }
-  
-  func actor(factory: @escaping () -> Actor) -> ActorRef {
-    return Nobody
-  }
-}
-
-public let NoActorContext: ActorContext = UninitializedContext()
+public typealias SimpleActor = BaseActor<Void>
