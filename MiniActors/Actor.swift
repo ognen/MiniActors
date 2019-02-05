@@ -22,6 +22,17 @@ public enum RestartStrategy {
 
 public let PoisonPill: Any = SystemMessages.Stop
 
+public struct ActorDef<A: Actor> {
+  let actor: A.Type = A.self
+  let props: A.Props
+}
+
+extension ActorDef where A.Props == Void {
+  init() {
+    self.init(props: ())
+  }
+}
+
 public protocol Actor: class {
   associatedtype Props
   

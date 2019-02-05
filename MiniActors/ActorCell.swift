@@ -85,6 +85,12 @@ class Cell {
   func tell(msg: Any, sender: ActorRefProtocol) {
     fatalError("Must be overidden in the concrete class")
   }
+  
+  var isStopped: Bool {
+    get {
+      fatalError()
+    }
+  }
 }
 
 class ActorCell<Actr: Actor>: Cell {
@@ -142,7 +148,7 @@ class ActorCell<Actr: Actor>: Cell {
     self.q.setSpecific(key: currentActorKey, value: ref)
   }
   
-  var isStopped: Bool {
+  override var isStopped: Bool {
     get {
       return q.sync { [weak self] in
         switch self?.state {

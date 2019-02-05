@@ -9,7 +9,7 @@ public protocol ActorCreation {
 public extension ActorCreation {
   public func actor
     <Actr: Actor>
-    (of type: Actr.Type, named name: String) -> ActorRef
+    (of type: Actr.Type, named name: String = String(describing: UUID())) -> ActorRef
     where Actr.Props == Void
   {
     return actor(of: type, props: (), named: name)
@@ -17,19 +17,17 @@ public extension ActorCreation {
   
   public func actor
     <Actr: Actor>
-    (of type: Actr.Type, props: Actr.Props) -> ActorRef
+    (of type: Actr.Type, props: Actr.Props, named name: String = String(describing: UUID())) -> ActorRef
   {
-    return actor(of: type, props: props, named: String(describing: UUID()))
+    return actor(of: type, props: props, named: name)
   }
   
   public func actor
     <Actr: Actor>
-    (of type: Actr.Type) -> ActorRef
-    where Actr.Props == Void
+    (definedBy def: ActorDef<Actr>, named name: String = String(describing: UUID())) -> ActorRef
   {
-    return actor(of: type, props: ())
+    return actor(of: def.actor, props: def.props, named: name)
   }
-  
 }
 
 public protocol ActorLookup {
