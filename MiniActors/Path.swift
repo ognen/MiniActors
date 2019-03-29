@@ -110,6 +110,12 @@ public struct RelativePath: PathSegment {
     return RelativePath(elements: standardized(base: self.elements,
                                                appending: path.elements))
   }
+  
+  var isDirectSibling: Bool {
+    get {
+      return elements.count == 1 && !Set([".", "..", "/"]).contains(elements[0])
+    }
+  }
 
 }
 

@@ -31,6 +31,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2826D4A82220370000490CAC /* Actors.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = Actors.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		2840D2AB21F71C9E00D7FA32 /* ActorSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorSystem.swift; sourceTree = "<group>"; };
 		2840D2AD21F7557000D7FA32 /* ActorSystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorSystemTests.swift; sourceTree = "<group>"; };
 		28A1386821F5FDD500B2378A /* ActorCellTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorCellTests.swift; sourceTree = "<group>"; };
@@ -45,7 +46,7 @@
 		28B7641321EC9C09002C53BD /* ActorRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActorRef.swift; path = ../../miniActors/MiniActors/ActorRef.swift; sourceTree = "<group>"; };
 		28B7641521ECDA4F002C53BD /* Actor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actor.swift; sourceTree = "<group>"; };
 		28EFA27921F2173D0083CFAC /* ActorContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActorContext.swift; sourceTree = "<group>"; };
-		28F3283B21F07BA600D9B781 /* Paths.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = Paths.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		28F3283B21F07BA600D9B781 /* GCD.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = GCD.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,7 +124,8 @@
 		28F3283821F07B3600D9B781 /* Playgrounds */ = {
 			isa = PBXGroup;
 			children = (
-				28F3283B21F07BA600D9B781 /* Paths.playground */,
+				28F3283B21F07BA600D9B781 /* GCD.playground */,
+				2826D4A82220370000490CAC /* Actors.playground */,
 			);
 			path = Playgrounds;
 			sourceTree = "<group>";

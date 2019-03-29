@@ -55,7 +55,7 @@ struct ChildStats {
       restartCounter += 1
 
     case (.some(_), .none):
-      break // impossible, we don't touch
+      break // impossible
 
     case (let windowStart?, let w?):
       let now = DispatchTime.now()
@@ -72,9 +72,85 @@ struct ChildStats {
   }
 }
 
+struct Children {
+  let uid: UUID
+  
+  private var q: DispatchQueue
+  
+  private var childUidByName: [String: UUID] = [:]
+  private var children: [UUID:Cell] = [:]
+  
+  init(uid: UUID) {
+    self.uid = uid
+    self.q = DispatchQueue(
+      label: "childern of \(uid)",
+      qos: .background,
+      attributes: .concurrent)
+  }
+  
+  mutating func registerChildCell(cell: Cell, named name: String) {
+    q.sync(flags: .barrier) {
+      childUidByName[name] = cell.uid
+      children[cell.uid] = cell
+    }
+  }
+  
+  mutating func unregisterChildCell(identifiedBy uid: UUID) {
+    q.sync(flags: .barrier) { () -> () in
+      children.removeValue(forKey: uid)
+    }
+  }
+  
+  
+  func childCell(named name: String) -> Cell? {
+    return q.sync {
+      if let uid = childUidByName[name],
+         let c = children[uid] {
+        return c
+      }
+      return nil
+    }
+  }
+  
+  func childCell(identifiedBy uid: UUID) -> Cell? {
+    return q.sync {
+      return children[uid]
+    }
+  }
+  
+  var isEmpty: Bool {
+    get {
+      return q.sync {
+        return children.isEmpty
+      }
+    }
+  }
+  
+  var count: Int {
+    get {
+      return q.sync {
+        return children.count
+      }
+    }
+  }
+}
+
+extension Children: Sequence {
+  typealias Iterator = Dictionary<UUID, Cell>.Values.Iterator
+  
+  func makeIterator() -> Children.Iterator {
+    return children.values.makeIterator()
+  }
+}
+
 // TYPE Erasure (base clasS)
 class Cell {
   let uid = UUID()
+  let name: String
+
+  init(name: String) {
+    self.name = name
+  }
   
   var ref: ActorRef {
     get {
@@ -91,27 +167,33 @@ class Cell {
       fatalError()
     }
   }
+  
+  func childCell(named name: String) -> Cell? {
+    fatalError()
+  }
+  
+  func childCell(identifiedBy uid: UUID) -> Cell? {
+    fatalError()
+  }
 }
 
 class ActorCell<Actr: Actor>: Cell {
-  let name: String
   let path: Path
 
   let config: ActorConfig
 
-  let actorClass: Actr.Type
+  let definition: ActorSpec<Actr>
   var actor: Actr?
-  let props: Actr.Props
-  
+
   var state: ActorState = .Operational
   
   let q: DispatchQueue
   
   var mailbox: [(ActorRef, Any)] = []
   
-  var childUidByName: [String: UUID] = [:]
-  var children: [UUID:Cell] = [:]
+  let globalLookup: ActorLookup
   var childStats: [UUID:ChildStats] = [:]
+  lazy var children = Children(uid: self.uid)
   
   var stopped: [String] = []
 
@@ -124,26 +206,26 @@ class ActorCell<Actr: Actor>: Cell {
   }
   
   var parent: ActorRef
+  
   var sender: ActorRef = Nobody
 
   init(name: String,
        parent: ActorRef,
-       actor: Actr.Type,
-       props: Actr.Props,
+       globalLookup: ActorLookup,
+       definition: ActorSpec<Actr>,
        config: ActorConfig) {
-    self.name = name
     self.parent = parent
     self.path = parent.path / name
-    
-    self.actorClass = actor
-    self.props = props
+
+    self.globalLookup = globalLookup
+    self.definition = definition
     self.config = config
     
     self.q = DispatchQueue(
       label: "Actor: \(path)",
       qos: DispatchQoS.userInitiated)
 
-    super.init()
+    super.init(name: name)
 
     self.q.setSpecific(key: currentActorKey, value: ref)
   }
@@ -254,7 +336,7 @@ class ActorCell<Actr: Actor>: Cell {
       self.state = .Stopped
       parent ! SystemMessages.Stopped
     } else {
-      for case let c as ActorCell in children.values {
+      for case let c as ActorCell in children {
         c.this ! SystemMessages.Stop
       }
       
@@ -267,7 +349,7 @@ class ActorCell<Actr: Actor>: Cell {
   
   func handleStoppedChild(_ child: ActorRef) {
     // TODO, clean up childUidByName or?
-    children.removeValue(forKey: child.uid)
+    children.unregisterChildCell(identifiedBy: child.uid)
     childStats.removeValue(forKey: child.uid)
     
     if state == .Terminating {
@@ -339,49 +421,79 @@ class ActorCell<Actr: Actor>: Cell {
   
   func ensureActor() -> Actr {
     if self.actor == nil {
-      let context = ContextReference(cell: self)
-      self.actor = self.actorClass.init(using: context, props: self.props)
+      self.actor = definition.actor(using: ContextReference(cell: self))
     }
     
     return self.actor!
   }
   
+
+  override func childCell(named name: String) -> Cell? {
+    return children.childCell(named: name)
+  }
+  
+  override func childCell(identifiedBy uid: UUID) -> Cell? {
+    return children.childCell(identifiedBy: uid)
+  }
+
 }
+
+extension ActorSpec {
+  func actor(using context: ActorContext) -> A {
+    return type.init(using: context, props: props)
+  }
+}
+
 
 extension ActorCell: ActorCreation {
   func actorCell
     <A: Actor>
-    (of type: A.Type, props: A.Props, named name: String) -> ActorCell<A>?
+    (definedBy def: ActorSpec<A>, named name: String) -> ActorCell<A>?
   {
-    return q.sync {
-      switch state {
-      case .Terminating, .Stopped:
-        return nil
-      default:
-        let cell = ActorCell<A>(name: name,
-                                parent: ref,
-                                actor: type,
-                                props: props,
-                                config: self.config)
-        childUidByName[name] = cell.uid
-        children[cell.uid] = cell
-        
-        return cell
-      }
+    switch state {
+    case .Terminating, .Stopped:
+      return nil
+    default:
+      let cell = ActorCell<A>(name: name,
+                              parent: ref,
+                              globalLookup: globalLookup,
+                              definition: def,
+                              config: self.config)
+
+      children.registerChildCell(cell: cell, named: name)
+
+      return cell
     }
   }
   
   func actor
     <A: Actor>
-    (of type: A.Type, props: A.Props, named name: String) -> ActorRef
+    (definedBy def: ActorSpec<A>, named name: String) -> ActorRef
   {
-    if let c =  actorCell(of: type, props: props, named: name) {
+    if let c = actorCell(definedBy: def, named: name) {
       return c.ref
     }
     return Nobody
   }
 }
 
+extension ActorCell: ActorLookup {
+  func actor(at path: RelativePath) -> ActorRef? {
+    if path.isDirectSibling {
+      if let cell = children.childCell(named: path.elements[0]) {
+        return cell.ref
+      } else {
+        return nil
+      }
+    } else {
+      return actor(at: self.path / path)
+    }
+  }
+  
+  func actor(at path: Path) -> ActorRef? {
+    return globalLookup.actor(at: path)
+  }
+}
 extension ActorCell: ActorContext {
   public var this: ActorRef {
     return ref
@@ -398,10 +510,21 @@ struct ContextReference<A: Actor, C: ActorCell<A>> {
 extension ContextReference: ActorCreation {
   func actor
     <Actr: Actor>
-    (of type: Actr.Type, props: Actr.Props, named: String) -> ActorRef
+    (definedBy def: ActorSpec<Actr>, named name: String) -> ActorRef
   {
-    return cell!.actor(of: type, props: props, named: named)
+    return cell!.actor(definedBy: def, named: name)
   }
+}
+
+extension ContextReference: ActorLookup {
+  func actor(at path: RelativePath) -> ActorRef? {
+    return cell!.actor(at: path)
+  }
+  
+  func actor(at path: Path) -> ActorRef? {
+    return cell!.actor(at: path)
+  }
+
 }
 
 extension ContextReference: ActorContext {

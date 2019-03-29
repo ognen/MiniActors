@@ -10,20 +10,23 @@ public let DefaultActorConfig =
 
 public class ActorSystem {
   let name: String
-  let root: ActorCell<RootActor>
-  let guardian: ActorCell<RootActor>
+  let config: ActorConfig
   
+  lazy var systemLookup = SystemLookup(root: self)
+  lazy var root: ActorCell<RootActor> =
+    ActorCell(name: "/",
+              parent: ActorRef(SyntheticParentRef()),
+              globalLookup: systemLookup,
+              definition: ActorSpec<RootActor>(),
+              config: config)
+  lazy var guardian: ActorCell<RootActor> =
+    root.actorCell(definedBy: ActorSpec<RootActor>(),
+                   named: "user")!
+
   public init(named name: String, config: ActorConfig = DefaultActorConfig) {
     self.name = name
-    root = ActorCell(name: "/",
-                     parent: ActorRef(SyntheticParentRef()),
-                     actor: RootActor.self,
-                     props: (),
-                     config: config)
-    
-    guardian = root.actorCell(of: RootActor.self, props: (), named: "user")!
+    self.config = config
   }
-  
 
   public var isStopped: Bool {
     get {
@@ -47,10 +50,32 @@ public func !(lhs: ActorSystem, rhs: Any) {
 extension ActorSystem: ActorCreation {
   public func actor
     <Actr: Actor>
-    (of type: Actr.Type, props: Actr.Props, named: String) -> ActorRef
+    (definedBy def: ActorSpec<Actr>, named name: String) -> ActorRef
   {
-    return guardian.actor(of: type, props: props, named: named)
+    return guardian.actor(definedBy: def, named: name)
   }
+}
+
+extension ActorSystem: ActorLookup {
+  public func actor(at path: RelativePath) -> ActorRef? {
+    return actor(at: Path.root / path)
+  }
+  
+  public func actor(at path: Path) -> ActorRef? {
+    var current: Cell? = nil
+    for el in path.elements {
+      if el == "/" {
+        current = root
+      } else if let child = current?.childCell(named: el) {
+        current = child
+      } else {
+        return nil
+      }
+    }
+    
+    return current?.ref
+  }
+
 }
 
 struct SyntheticParentRef: ActorRefProtocol {
@@ -79,3 +104,14 @@ class RootActor: BaseActor<Void> {
   }
 }
 
+struct SystemLookup<RootLookup: ActorLookup & AnyObject>: ActorLookup {
+  weak var root: RootLookup?
+  
+  func actor(at path: RelativePath) -> ActorRef? {
+    return root?.actor(at: path)
+  }
+  
+  func actor(at path: Path) -> ActorRef? {
+    return root?.actor(at: path)
+  }
+}
