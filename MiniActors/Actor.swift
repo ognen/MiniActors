@@ -53,8 +53,23 @@ public extension Actor {
       return context.sender
     }
   }
+  
+  var this: ActorRef {
+    get {
+      return context.this
+    }
+  }
+  
+  static func spec(_ props: Props) -> ActorSpec<Self> {
+    return ActorSpec<Self>(props: props)
+  }
 }
 
+public extension Actor where Props == Void {
+  static func spec() -> ActorSpec<Self> {
+    return ActorSpec()
+  }
+}
 
 public enum ActorErrors: Error {
   case UnhandledMessage
