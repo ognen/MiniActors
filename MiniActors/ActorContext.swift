@@ -7,14 +7,14 @@ public protocol ActorCreation {
 }
 
 public extension ActorCreation {
-  public func actor
+  func actor
     <Actr: Actor>
     (of type: Actr.Type, props: Actr.Props, named name: String = String(describing: UUID())) -> ActorRef
   {
     return actor(definedBy: ActorSpec<Actr>(props: props), named: name)
   }
 
-  public func actor
+  func actor
     <Actr: Actor>
     (of type: Actr.Type, named name: String = String(describing: UUID())) -> ActorRef
     where Actr.Props == Void

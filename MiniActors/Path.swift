@@ -9,15 +9,15 @@ public protocol PathSegment: Hashable {
 
 public extension PathSegment {
 
-  public static func / (lhs: Self, rhs: String) -> Self {
+  static func / (lhs: Self, rhs: String) -> Self {
     return lhs.appending(RelativePath(rhs))
   }
   
-  public static func / (lhs: Self, rhs: RelativePath) -> Self {
+  static func / (lhs: Self, rhs: RelativePath) -> Self {
     return lhs.appending(rhs)
   }
   
-  public var parent: Self {
+  var parent: Self {
     get {
       if elements.count == 0 {
         return self

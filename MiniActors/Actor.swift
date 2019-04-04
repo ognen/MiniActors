@@ -48,7 +48,7 @@ public protocol Actor: class {
 }
 
 public extension Actor {
-  public var sender: ActorRef {
+  var sender: ActorRef {
     get {
       return context.sender
     }
